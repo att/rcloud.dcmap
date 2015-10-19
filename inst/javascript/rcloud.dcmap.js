@@ -236,10 +236,20 @@
         var dcmap = initChoro(dc_leaflet, div, dimension, group, groupname, opts);
 
         // Leaflet will not render until it's actually in the DOM
-        // I'm sure there's a better way to do this!
-        window.setTimeout(function() {
-            dcmap.choro.render();
-        }, 500);
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                dcmap.choro.render();
+                observer.disconnect();
+                console.log(mutation.type);
+            });
+        });
+
+        // configuration of the observer:
+        var config = { attributes: true, childList: true, subtree: true };
+
+        // pass in the target node, as well as the observer options
+        observer.observe(div[0], config);
+
         return div;
     }
 
