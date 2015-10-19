@@ -63,7 +63,7 @@
             .margins({top: 20, left: 0,
                       right: 0, bottom: 0})
             .center([40.672828,-74.6774659])
-            .zoom(8)
+            .zoom(6)
             .geojson(blankGeo)
             .colors(colorbrewer.YlOrRd[9])
             .colorAccessor(function(d,i) {
@@ -134,11 +134,6 @@
             choro.dimension(chartgroup.dimensions[levels[level].dimension])
                 .group(chartgroup.groups[levels[level].group]);
 
-            if(opts.shape_url) {
-                d3.json(opts.shape_url, function(error, geostates) {
-                    choro.geojson(geostates);
-                });
-            }
                 /*
             dats([b.getWest(),b.getSouth(),
                   b.getEast(),b.getNorth()],
@@ -239,6 +234,12 @@
         // I'm sure there's a better way to do this!
         window.setTimeout(function() {
             dcmap.choro.render();
+            if(opts.shape_url) { // static regions: just load once
+                d3.json(opts.shape_url, function(error, geostates) {
+                    dcmap.choro.geojson(geostates)
+                        .redraw();
+                });
+            }
         }, 500);
         return div;
     }
