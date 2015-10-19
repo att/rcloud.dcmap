@@ -76,8 +76,8 @@
             throw new Error('group ' + group + ' not found.');
         choro.dimension(chartgroup.dimensions[dimension])
             .group(chartgroup.groups[group])
-            .width(700)
-            .height(450)
+            .width(opts.width)
+            .height(opts.height)
             .margins({top: 20, left: 0,
                       right: 0, bottom: 0})
             .center([40.672828,-74.6774659])
