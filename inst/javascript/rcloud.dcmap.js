@@ -15,26 +15,8 @@
         }
     });
 
-    function initChoro(dc_leaflet, dimension, group, groupname, opts) {
-        var div = $('<div id="choro" style="width: ' + opts.width + 'px; height: ' + opts.height + 'px; float: none"></div>');
-        var choro;
-        div.append($('<p><b>Counts per region</b>&nbsp;&nbsp;</p>')
-                      .append($('<span/>', {class: 'reset', style: 'display: none;'})
-                              .append('Current filter: ')
-                              .append($('<span/>', {class: 'filter'})))
-                      .append('&nbsp;&nbsp;')
-                      .append($('<a></a>', {
-                          class: 'reset',
-                          href: '#',
-                          style: "display: none;"
-                      })
-                              .append("reset")
-                              .click(function(e) {
-                                  e.preventDefault();
-                                  choro.filterAll();
-                                  dc_leaflet.dc.redrawAll(groupname);
-                              })));
-        choro = dc_leaflet.choroplethChart(div[0], groupname);
+    function initChoro(dc_leaflet, div, dimension, group, groupname, opts) {
+        var choro = dc_leaflet.choroplethChart(div[0], groupname);
         var rendered = false;
         var last_level = null;
         var levels = {
@@ -229,9 +211,36 @@
             })
             .on('moveend', function(){
                 move_end();
-            })
-            .render();
+            });
         return {choro: choro, div: div};
+    }
+
+    function makeDiv(dc_leaflet, dimension, group, groupname, opts) {
+        var div = $('<div id="choro" style="width: ' + opts.width + 'px; height: ' + opts.height + 'px; float: none"></div>');
+        div.append($('<p><b>Counts per region</b>&nbsp;&nbsp;</p>')
+                      .append($('<span/>', {class: 'reset', style: 'display: none;'})
+                              .append('Current filter: ')
+                              .append($('<span/>', {class: 'filter'})))
+                      .append('&nbsp;&nbsp;')
+                      .append($('<a></a>', {
+                          class: 'reset',
+                          href: '#',
+                          style: "display: none;"
+                      })
+                              .append("reset")
+                              .click(function(e) {
+                                  e.preventDefault();
+                                  choro.filterAll();
+                                  dc_leaflet.dc.redrawAll(groupname);
+                              })));
+        var dcmap = initChoro(dc_leaflet, div, dimension, group, groupname, opts);
+
+        // Leaflet will not render until it's actually in the DOM
+        // I'm sure there's a better way to do this!
+        window.setTimeout(function() {
+            dcmap.choro.render();
+        }, 500);
+        return div;
     }
 
     return {
@@ -239,7 +248,7 @@
             require(['leaflet', 'dc_leaflet','colorbrewer'], function (L, dc_leaflet,colorbrewer) {
                 var dcmap;
                 try {
-                    dcmap = initChoro(dc_leaflet, dimension, group, window.wdcplot_current, opts);
+                    dcmap = makeDiv(dc_leaflet, dimension, group, window.wdcplot_current, opts);
                 }
                 catch(xep) {
                     k(function() {
@@ -247,7 +256,7 @@
                     });
                     return;
                 }
-                k(function() { return dcmap.div; });
+                k(function() { return dcmap; });
             });
         }
     };
