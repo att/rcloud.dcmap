@@ -13,4 +13,5 @@ dcmap.caps <- NULL
   ##   dcmap.caps$init()
   ## }
   rcloud.install.css("/shared.R/rcloud.dcmap/leaflet.css")
+  rcloud.install.css("/shared.R/rcloud.dcmap/leaflet-legend.css")
 }
