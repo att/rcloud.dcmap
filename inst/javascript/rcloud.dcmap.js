@@ -72,7 +72,8 @@
             })
             .featureKeyAccessor(function(feature) {
                 return feature.properties.NAME;
-            });
+            })
+            .legend(dc_leaflet.legend());
 
         function apply_geo(id_field) {
             return function(err, data) {
@@ -143,52 +144,6 @@
             last_level = level;
         }
 
-        //Legend
-        var Legend= L.Control.extend({
-            options: {position:'bottomright'},
-            onAdd: function (map) {
-                this.div = L.DomUtil.create('div', 'info legend');
-                map.on('moveend',this._update,this);
-                this._update();
-                return this.div;
-            },
-            _update: function(){
-                var div = this.div;
-                while (div.hasChildNodes()) {
-                    div.removeChild(div.firstChild);
-                }
-
-                var domain=d3.extent(choro.data(),
-                                     function(d) {return d.value;});
-                var interval=(domain[1]-domain[0])/5;
-                var grades = [];
-                for (var di=0; di < 5; di++){
-                    var v= domain[0]+di*interval;
-                    grades.push({value:Math.floor(v)});
-                }
-                //grades.push({value:Math.floor(domain[1])});
-                var getColor=choro.colorCalculator();
-
-                var labels = [];
-
-                // loop through our density intervals and
-                // generate a label with a colored square
-                // for each interval
-                for (var i = 0; i < grades.length; i++) {
-                    div.innerHTML +=
-                        '<i style="background:' +
-                        getColor(grades[i]) +
-                        '"></i> ' +
-                        grades[i].value +
-                        (grades[i + 1] ? '&ndash;' +
-                         grades[i + 1].value + '<br>' : '+');
-                }
-            }
-        });
-
-        var legend = new Legend();
-
-
         // might be misleading, but it's more exciting
         choro.on('preRender', function(chart) {
             chart.calculateColorDomain();
@@ -199,9 +154,6 @@
             .on('postRedraw', function(chart){
                 chart.calculateColorDomain();
                 var map = choro.map();
-                if(map != legend._map){
-                    legend.addTo(map);
-                }
                 console.log('postRedraw');
             })
             .on('moveend', function(){
