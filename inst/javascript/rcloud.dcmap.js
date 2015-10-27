@@ -162,24 +162,13 @@
         return {choro: choro, div: div};
     }
 
-    function makeDiv(dc_leaflet, dimension, group, groupname, opts) {
+    function makeDiv(dc_leaflet, dimension, group, groupname, wdcplot, opts) {
         var div = $('<div id="choro" style="width: ' + opts.width + 'px; height: ' + opts.height + 'px; float: none"></div>');
         div.append($('<p><b>Counts per region</b>&nbsp;&nbsp;</p>')
-                      .append($('<span/>', {class: 'reset', style: 'display: none;'})
-                              .append('Current filter: ')
-                              .append($('<span/>', {class: 'filter'})))
-                      .append('&nbsp;&nbsp;')
-                      .append($('<a></a>', {
-                          class: 'reset',
-                          href: '#',
-                          style: "display: none;"
-                      })
-                              .append("reset")
-                              .click(function(e) {
-                                  e.preventDefault();
-                                  choro.filterAll();
-                                  dc_leaflet.dc.redrawAll(groupname);
-                              })));
+                   .append(wdcplot.filter_controls(function() {
+                       dcmap.choro.filterAll();
+                       dc_leaflet.dc.redrawAll(groupname);
+                   })));
         var dcmap = initChoro(dc_leaflet, div, dimension, group, groupname, opts);
 
         // Leaflet will not render until it's actually in the DOM
@@ -198,10 +187,10 @@
 
     return {
         handle_dcmap: function(dimension, group, opts, k) {
-            require(['leaflet', 'dc_leaflet','colorbrewer'], function (L, dc_leaflet,colorbrewer) {
+            require(['leaflet', 'dc_leaflet', 'colorbrewer', 'wdcplot'], function (L, dc_leaflet, colorbrewer, wdcplot) {
                 var dcmap;
                 try {
-                    dcmap = makeDiv(dc_leaflet, dimension, group, window.wdcplot_current, opts);
+                    dcmap = makeDiv(dc_leaflet, dimension, group, window.wdcplot_current, wdcplot, opts);
                 }
                 catch(xep) {
                     k(function() {
