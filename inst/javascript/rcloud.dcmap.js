@@ -162,21 +162,22 @@
         return {choro: choro, div: div};
     }
 
-    function makeDiv(dc_leaflet, dimension, group, groupname, wdcplot, opts) {
-        var div = $('<div id="choro" style="width: ' + opts.width + 'px; height: ' + opts.height + 'px; float: none"></div>');
+    function build_map(wdcplot, dc_leaflet, groupname, defn) {
+        var div = $('<div id="choro" style="width: ' + defn.width + 'px; height: ' +
+                    defn.height + 'px; float: none"></div>');
         div.append($('<p><b>Counts per region</b>&nbsp;&nbsp;</p>')
                    .append(wdcplot.filter_controls(function() {
                        dcmap.choro.filterAll();
                        dc_leaflet.dc.redrawAll(groupname);
                    })));
-        var dcmap = initChoro(dc_leaflet, div, dimension, group, groupname, opts);
+        var dcmap = initChoro(dc_leaflet, div, defn.dimension, defn.group, groupname, defn);
 
         // Leaflet will not render until it's actually in the DOM
         // I'm sure there's a better way to do this!
         window.setTimeout(function() {
             dcmap.choro.render();
-            if(opts.shape_url) { // static regions: just load once
-                d3.json(opts.shape_url, function(error, geostates) {
+            if(defn.shape_url) { // static regions: just load once
+                dc_leaflet.d3.json(defn.shape_url, function(error, geostates) {
                     dcmap.choro.geojson(geostates)
                         .redraw();
                 });
@@ -185,12 +186,42 @@
         return div;
     }
 
+    // equivalent of wdcplot.js
+    function parse_map_defn(jsexpr, dimension, group, opts) {
+        var defn = {
+            dimension: jsexpr.col_ref(dimension, 'dimension'),
+            group: jsexpr.col_ref(group, 'group')
+        };
+        return _.extend(defn, opts);
+    }
+
+    // poor shadow of dcplot.js
+    function infer_stuff(defn) {
+        if(!defn.width)
+            defn.width = 700;
+        if(!defn.height)
+            defn.height = 450;
+        if(defn['shape.url'])
+            defn.shape_url = defn['shape.url'];
+        return defn;
+    }
+
     return {
         handle_dcmap: function(dimension, group, opts, k) {
-            require(['leaflet', 'dc_leaflet', 'colorbrewer', 'wdcplot'], function (L, dc_leaflet, colorbrewer, wdcplot) {
-                var dcmap;
+            require(['leaflet', 'dc_leaflet', 'colorbrewer', 'wdcplot', 'jsexpr'],
+                    function (L, dc_leaflet, colorbrewer, wdcplot, jsexpr) {
+                var defn, div;
                 try {
-                    dcmap = makeDiv(dc_leaflet, dimension, group, window.wdcplot_current, wdcplot, opts);
+                    defn = parse_map_defn(jsexpr, dimension, group, opts);
+                }
+                catch(xep) {
+                    k(function() {
+                        return $('<p/>').append("Exception reading dcmap definition: " + xep);
+                    });
+                }
+                try {
+                    defn = infer_stuff(defn);
+                    div = build_map(wdcplot, dc_leaflet, window.wdcplot_current, defn);
                 }
                 catch(xep) {
                     k(function() {
@@ -198,7 +229,7 @@
                     });
                     return;
                 }
-                k(function() { return dcmap; });
+                k(function() { return div; });
             });
         }
     };
