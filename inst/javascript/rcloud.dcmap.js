@@ -15,7 +15,7 @@
         }
     });
 
-    function initChoro(dc_leaflet, div, dimension, group, groupname, opts) {
+    function initChoro(dc_leaflet, div, dimension, group, groupname, chartgroup, opts) {
         var choro = dc_leaflet.choroplethChart(div[0], groupname);
         var rendered = false;
         var last_level = null;
@@ -51,7 +51,6 @@
             features: [],
             type: "FeatureCollection"
         };
-        var chartgroup = window.wdcplot_registry[groupname];
         if(!chartgroup.dimensions[dimension])
             throw new Error('dimension ' + dimension + ' not found.');
         if(!chartgroup.groups[group])
@@ -162,7 +161,7 @@
         return {choro: choro, div: div};
     }
 
-    function build_map(wdcplot, dc_leaflet, groupname, defn) {
+    function build_map(wdcplot, dc_leaflet, groupname, chartgroup, defn) {
         var div = $('<div id="choro" style="width: ' + defn.width + 'px; height: ' +
                     defn.height + 'px; float: none"></div>');
         div.append($('<p><b>Counts per region</b>&nbsp;&nbsp;</p>')
@@ -170,7 +169,8 @@
                        dcmap.choro.filterAll();
                        dc_leaflet.dc.redrawAll(groupname);
                    })));
-        var dcmap = initChoro(dc_leaflet, div, defn.dimension, defn.group, groupname, defn);
+        var dcmap = initChoro(dc_leaflet, div, defn.dimension, defn.group,
+                              groupname, chartgroup, defn);
 
         // Leaflet will not render until it's actually in the DOM
         // I'm sure there's a better way to do this!
@@ -187,12 +187,24 @@
     }
 
     // equivalent of wdcplot.js
-    function parse_map_defn(jsexpr, dimension, group, opts) {
+    function parse_map_defn(jsexpr, dcmap_eval, dataframe, dimension, group, opts) {
         var defn = {
             dimension: jsexpr.col_ref(dimension, 'dimension'),
             group: jsexpr.col_ref(group, 'group')
         };
-        return _.extend(defn, opts);
+        if(opts[0][0]!==null || opts[0][1]!=='list')
+            throw new Error('not the dcmap options format we expect');
+        for(var i=1; i<opts.length; ++i) {
+            var key = opts[i][0], val = opts[i][1];
+            defn[key] = jsexpr.argument(dataframe, val, dcmap_eval);
+        }
+        return defn;
+    }
+
+    function dcmap_eval_factory(L, dc_leaflet, dc, d3) {
+        return function(expr) {
+            return eval(expr);
+        };
     }
 
     // poor shadow of dcplot.js
@@ -208,11 +220,13 @@
 
     return {
         handle_dcmap: function(dimension, group, opts, k) {
-            require(['leaflet', 'dc_leaflet', 'colorbrewer', 'wdcplot', 'jsexpr'],
-                    function (L, dc_leaflet, colorbrewer, wdcplot, jsexpr) {
+            require(['leaflet', 'dc_leaflet', 'colorbrewer', 'wdcplot', 'jsexpr'], function (L, dc_leaflet, colorbrewer, wdcplot, jsexpr) {
+                var dcmap_eval = dcmap_eval_factory(L, dc_leaflet, dc_leaflet.dc, dc_leaflet.d3);
+                var groupname = window.wdcplot_current,
+                    chartgroup = window.wdcplot_registry[groupname];
                 var defn, div;
                 try {
-                    defn = parse_map_defn(jsexpr, dimension, group, opts);
+                    defn = parse_map_defn(jsexpr, dcmap_eval, chartgroup.dataframe, dimension, group, opts);
                 }
                 catch(xep) {
                     k(function() {
@@ -221,7 +235,7 @@
                 }
                 try {
                     defn = infer_stuff(defn);
-                    div = build_map(wdcplot, dc_leaflet, window.wdcplot_current, defn);
+                    div = build_map(wdcplot, dc_leaflet, groupname, chartgroup, defn);
                 }
                 catch(xep) {
                     k(function() {
