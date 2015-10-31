@@ -202,7 +202,7 @@
     }
 
     function dcmap_eval_factory(L, dc_leaflet, dc, d3) {
-        return function(expr) {
+        return function(expr, key, value) {
             return eval(expr);
         };
     }
