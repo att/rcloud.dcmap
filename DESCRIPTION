@@ -1,9 +1,9 @@
 Package: rcloud.dcmap
 Title: Cross-filtering leaflet for RCloud
-Version: 0.0.6
+Version: 0.0.7
 Author: Gordon Woodhull <gordon@research.att.com>
 Maintainer: Gordon Woodhull <gordon@research.att.com>
 Description: rcloud.dcmap provides a leaflet map which integrates with rcloud.dcplot
-Depends: rcloud.support, rcloud.dcplot (>= 0.7.9)
+Depends: rcloud.support, rcloud.dcplot (>= 0.7.10)
 NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
 License: MIT

@@ -220,30 +220,36 @@
 
     return {
         handle_dcmap: function(dimension, group, opts, k) {
+            // we always return undefined; "return error(...)" is just syntactic sugar
+            function error(message) {
+                k(function() {
+                    return $('<div/>').append(message);
+                });
+            }
             require(['leaflet', 'dc_leaflet', 'colorbrewer', 'wdcplot', 'jsexpr'], function (L, dc_leaflet, colorbrewer, wdcplot, jsexpr) {
                 var dcmap_eval = dcmap_eval_factory(L, dc_leaflet, dc_leaflet.dc, dc_leaflet.d3);
-                var groupname = window.wdcplot_current,
-                    chartgroup = window.wdcplot_registry[groupname];
+                var groupname = window.wdcplot_current;
+                if(!groupname)
+                    return error('No current chart group found; run wdcplot first');
+                var chartgroup = window.wdcplot_registry[groupname];
+                if(!chartgroup)
+                    return error('Current chart group not found? Is your rcloud.dcplot wrong somehow?');
                 var defn, div;
                 try {
                     defn = parse_map_defn(jsexpr, dcmap_eval, chartgroup.dataframe, dimension, group, opts);
                 }
                 catch(xep) {
-                    k(function() {
-                        return $('<p/>').append("Exception reading dcmap definition: " + xep);
-                    });
+                    return error('Exception reading dcmap definition: ' + xep);
                 }
                 try {
                     defn = infer_stuff(defn);
                     div = build_map(wdcplot, dc_leaflet, groupname, chartgroup, defn);
                 }
                 catch(xep) {
-                    k(function() {
-                        return $('<p/>').append("Exception instantiating dcmap: " + xep);
-                    });
-                    return;
+                    return error('Exception instantiating dcmap: ' + xep);
                 }
                 k(function() { return div; });
+                return undefined; // for the linter
             });
         }
     };
